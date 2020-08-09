@@ -1,0 +1,53 @@
+package edu.udo.cs.rvs.ssdp;
+
+
+/**
+ * This class is first instantiated on program launch and IF (and only if) it
+ * implements Runnable, a {@link Thread} is created and started.
+ *
+ */
+public class SSDPPeer implements Runnable
+{
+	public SSDPPeer()
+	{
+
+	}
+
+	@Override
+	public void run() {
+		
+		Listen listener = new Listen();;
+		Worker worker;
+		User user;
+		
+		// Check if peer can be started as a Thread
+		if (listener instanceof Runnable)
+		{
+			// make ListenThread
+			Runnable listenerRunnable = (Runnable) listener;
+			Thread listenerThread = new Thread(listenerRunnable);
+			listenerThread.setName("Listen Thread");
+			listenerThread.setDaemon(false);
+			listenerThread.start();
+			
+			// make WorkerThread
+			
+			worker = new Worker(listener);
+			Runnable wothRunnable = (Runnable) worker;
+			Thread wothThread = new Thread(wothRunnable);
+			wothThread.setName("Worker Thread");
+			wothThread.setDaemon(false);
+			wothThread.start();
+			
+			// make UserThread
+			user = new User(listener,worker);
+			Runnable userRunnable = (Runnable) user;
+			Thread userThread = new Thread(userRunnable);
+			userThread.setName("User Thread");
+			userThread.setDaemon(false);
+			userThread.start();
+	
+		}
+		
+	}
+}

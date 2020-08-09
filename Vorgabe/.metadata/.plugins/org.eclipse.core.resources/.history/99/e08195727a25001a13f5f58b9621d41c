@@ -1,0 +1,94 @@
+package edu.udo.cs.rvs.ssdp; 
+import java.net.DatagramPacket;
+import java.net.InetAddress;
+import java.net.MulticastSocket;
+import java.nio.charset.StandardCharsets;
+import java.util.LinkedList;
+import java.util.UUID;
+
+public class Listen implements Runnable{
+	
+	private boolean running;
+	private MulticastSocket ms;
+	private LinkedList<String> list = new LinkedList<>();
+	
+	
+	public Listen() {
+		running = true;
+		
+		try {		
+			ms = new MulticastSocket(1900);
+			ms.joinGroup(InetAddress.getByName("239.255.255.250"));			
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.exit(1);
+		}
+		
+	}
+	
+	public void run() {
+		
+		 byte[] buf = new byte[1000];
+		 DatagramPacket paket = new DatagramPacket(buf, buf.length);
+		
+		 while(running) {
+			 
+			 try {
+				ms.receive(paket);
+			} catch (Exception e) {
+				e.printStackTrace();
+				System.exit(1);
+			}
+			 
+			String message = new String(paket.getData(), StandardCharsets.UTF_8);
+			
+			synchronized(list) {
+				list.add(message);
+			}
+			
+			try {
+				Thread.sleep(10);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		 
+//  		 end Socket 
+		try {
+			ms.leaveGroup(InetAddress.getByName("239.255.255.250"));
+			ms.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public void end() {
+		running = false;
+	}
+	
+	public LinkedList<String> getList() {
+		
+		return list;
+	}
+	
+	public void send() {
+		
+		UUID id = UUID.randomUUID();
+		
+		String scan = "M-SEARCH * HTTP/1.1\r\n" + 
+				"S: uuid:" + id + "\r\n" +
+				"HOST: 239.255.255.250:1900\r\n" + 
+				"MAN: ssdp:discover \r\n" + 
+				"ST: ge:fridge\r\n" +
+				"\r\n";
+		
+        try {
+			DatagramPacket scanner = new DatagramPacket(scan.getBytes("utf8"), scan.getBytes("utf8").length,InetAddress.getByName("239.255.255.250"),1900);
+			ms.send(scanner);
+        } catch (Exception e) {
+			e.printStackTrace();
+			System.exit(1);
+		}
+	}
+
+}

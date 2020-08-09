@@ -1,0 +1,59 @@
+package edu.udo.cs.rvs.ssdp;
+
+import java.util.Scanner;
+
+public class User implements Runnable {
+	
+	private Worker worker;
+	private Listen listener;
+	
+	public User(Listen li, Worker wo) {
+		this.listener = li;
+		this.worker = wo;
+	}
+	
+	public void run() {
+		
+		while(true) {
+			
+			@SuppressWarnings("resource")
+			Scanner s = new Scanner(System.in);
+			String currentLine = s.next();
+			
+			if(currentLine.equals("EXIT")) {
+				
+				
+				listener.end();
+				System.out.println("ending");
+				System.exit(0);
+				
+				
+			}	else if(currentLine.equals("CLEAR")) {
+				
+				
+				worker.clearGeraete();
+				
+				
+			}	else if(currentLine.equals("LIST")) {
+				
+				
+				for(Device d:worker.getGeraete()) {
+					System.out.println(d);
+				}
+				
+				
+			}	else if(currentLine.equals("SCAN")) {
+				
+				listener.send();
+				
+			}
+			
+			try {
+				Thread.sleep(10);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			
+		}
+	}
+}

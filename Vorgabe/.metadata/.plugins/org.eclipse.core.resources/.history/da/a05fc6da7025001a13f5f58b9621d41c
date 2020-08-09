@@ -1,0 +1,78 @@
+
+package edu.udo.cs.rvs.ssdp;
+
+import java.util.LinkedList;
+
+public class Device {
+	
+	private String uuid = "default";
+	private LinkedList<String> dienste = new LinkedList<>();
+	private boolean abmelden;
+	
+	public Device (String uuid) {
+		this.uuid = uuid;
+		abmelden = false;
+	}
+	
+	public Device() {
+
+	}
+	
+	public void addDienst(String dienst) {
+		dienste.add(dienst);
+	}
+	
+	public LinkedList<String> getDienste() {
+		return dienste;
+	}
+	
+	public String getUuid() {
+		return uuid;
+	}
+	
+	@Override
+	public String toString() {
+		String result = uuid + "   -   ";
+		
+		if(dienste.size()==1) {
+			result = result + dienste.getFirst();
+		}	else {
+			for(String s:dienste) {
+				result = result + s + ", ";
+			}
+		}
+		return result + "\n";
+	}
+	
+	public void addUuid(String uuid) {
+		if(this.uuid.equals("default")) {
+			this.uuid = uuid;
+		}
+	}
+	
+	public void abmelden() {
+		abmelden = true;
+	}
+	
+	public boolean getAbmelden() {
+		return abmelden;
+	}
+	
+	@Override
+	public boolean equals(Object o) {
+        // If the object is compared with itself then return true   
+        if (o == this) { 
+            return true; 
+        } 
+  
+        /* Check if o is an instance of Device or not 
+          "null instanceof [type]" also returns false */
+        if (!(o instanceof Device)) { 
+            return false; 
+        } else {
+        	return this.getUuid().equals(((Device) o).getUuid());
+        }
+        
+	}
+
+}

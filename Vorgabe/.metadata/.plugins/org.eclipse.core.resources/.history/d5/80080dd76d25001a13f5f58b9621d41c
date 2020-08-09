@@ -1,0 +1,158 @@
+package edu.udo.cs.rvs.ssdp;
+
+import java.util.LinkedList;
+
+public class Worker implements Runnable {
+	
+	Listen listener;
+	LinkedList<String> nachrichten;
+	LinkedList<Device> geraete = new LinkedList<>();
+	boolean running;
+		
+	public Worker(Listen li) {
+		running = true;
+		this.listener = li;
+	}
+	
+	public void run() {
+
+		
+		
+		while(running) {
+			
+			nachrichten = listener.getList();
+			LinkedList<String> workingList = new LinkedList<>();
+			
+			synchronized(nachrichten) {
+				while(!nachrichten.isEmpty()) {
+					workingList.add(nachrichten.removeFirst());
+				}
+			}
+			
+			
+			String[] result;
+			String[] line;
+			String[] services;
+			Device devi = new Device();
+			
+
+			while(!workingList.isEmpty()) {
+				result = workingList.removeFirst().split("\r\n");
+			
+				
+					for(int i = 0 ; i<result.length ; i++) {
+						System.out.println(i + "-> " + result[i]);
+					}
+				
+				if(result[0].compareTo("HTTP/1.1 200 OK")==0) {
+
+					for (int i = 1; i<result.length; i++) {
+						line = result[i].split(":");
+						services = result[i].split(":",2); 
+
+						if(line[0].equals("USN")) {
+							devi.addUuid(line[2].trim());
+						}	else 
+						if(line[0].equals("ST")) {
+							devi.addDienst(services[1].trim());
+						}
+					}
+					hinzufuegen(devi);
+				} 
+				
+				else if(result[0].compareTo("NOTIFY * HTTP/1.1")==0) {
+				
+					for (int i = 1; i<result.length; i++) {
+						line = result[i].split(":");
+						services = result[i].split(":",2); 
+
+						if(line[0].equals("USN")) {
+							devi.addUuid(line[2].trim());
+						}	else
+						if(line[0].equals("NTS") && line[2].equals("byebye")) {
+							System.out.println(line[2]);	
+							devi.abmelden();
+						}	else 
+						if(line[0].equals("NT")) {
+							devi.addDienst(services[1].trim());
+						}
+					}
+					hinzufuegen(devi);
+				}
+
+			}
+			try {
+				Thread.sleep(10);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	public void end() {
+		running = false;
+	}
+	
+	public void hinzufuegen(Device d) {
+
+		synchronized(geraete) {
+			
+//			System.out.println(d);
+			
+			if(d.getAbmelden()) {
+//				System.out.println("abgemeldet");
+				if(geraete.contains(d)) {
+					geraete.remove(d);
+				}
+				//else do nothing
+			}	else {
+//				System.out.print("angemeldet");
+				if(!geraete.contains(d)) {
+//					System.out.print(" neu\n");
+					geraete.add(d);
+				}	else {
+//					System.out.print(" alt\n");
+					int index = geraete.indexOf(d);
+					Device devi = geraete.get(index);
+					if(!devi.getDienste().contains(d.getDienste().getFirst())) {
+						devi.addDienst(d.getDienste().getFirst());
+					}
+				}
+			}
+
+//			for(Device devi: geraete) {
+//				if(devi.getUuid().equals(d.getUuid())) {
+//					containsDevice = true;
+//					if(d.getAbmelden()) {
+//						geraete.remove(devi);
+//					} else {
+//						String einzufuegenderDienst = d.getDienste().getFirst();
+//						for(String s: devi.getDienste()) {
+//							if(s.equals(einzufuegenderDienst)) {
+//								containsService = true;
+//							}
+//						}
+//						if(!containsService) {
+//							devi.addDienst(d.getDienste().getFirst());
+//						}	
+//					}
+//				}
+//			}
+//			if(!containsDevice && !d.getAbmelden()) {
+//				geraete.add(d);
+//			}
+		}
+	}
+	
+	public LinkedList<Device> getGeraete() {
+		synchronized(geraete) {
+			return geraete;
+		}
+	}
+	
+	public void clearGeraete() {
+		synchronized(geraete) {
+			geraete = new LinkedList<Device>();
+		}
+	}
+}
